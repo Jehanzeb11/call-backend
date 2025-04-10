@@ -6,7 +6,6 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -15,14 +14,9 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  socket.on("join-room", (data) => {
-    const { roomId, email } = data;
-    console.log(`User with email ${email} joined room ${roomId}`);
+  socket.on("join-room", ({ roomId }) => {
     socket.join(roomId);
-    socket.emit("joined-room", { roomId });
-    socket.broadcast.to(roomId).emit("user-joined", { email });
+    socket.broadcast.to(roomId).emit("user-joined");
   });
 
   socket.on("offer", ({ roomId, offer }) => {
@@ -42,10 +36,6 @@ io.on("connection", (socket) => {
   });
 });
 
-app.get("/", (req, res) => {
-  res.send("Signaling server is up and running");
-});
-
 server.listen(8500, () => {
-  console.log("Server listening on port 8500");
+  console.log("Server running on port 8500");
 });
