@@ -17,10 +17,12 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("join-room", ({ roomId }) => {
+  socket.on("join-room", (data) => {
+    const { roomId, email } = data;
+    console.log(`User with email ${email} joined room ${roomId}`);
     socket.join(roomId);
-    socket.broadcast.to(roomId).emit("user-joined");
-    console.log(`User joined room: ${roomId}`);
+    socket.emit("joined-room", { roomId });
+    socket.broadcast.to(roomId).emit("user-joined", { email });
   });
 
   socket.on("offer", ({ roomId, offer }) => {
