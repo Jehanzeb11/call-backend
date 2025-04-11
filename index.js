@@ -30,28 +30,35 @@ io.on("connection", (socket) => {
     const numUsers = rooms[roomId].length;
 
     if (numUsers === 1) {
-      socket.emit("created");
+      socket.emit("created"); // Emit only to the first user
     } else if (numUsers === 2) {
-      io.to(roomId).emit("ready");
+      io.to(roomId).emit("ready"); // Notify both users to start
     } else {
-      socket.emit("room-full");
+      socket.emit("room-full"); // Notify if room is full
     }
 
     socket.on("disconnect", () => {
+      console.log(`User ${socket.id} disconnected`);
       rooms[roomId] = rooms[roomId]?.filter((id) => id !== socket.id);
-      if (rooms[roomId]?.length === 0) delete rooms[roomId];
+      if (rooms[roomId]?.length === 0) {
+        delete rooms[roomId]; // Remove room from memory if no users are left
+        console.log(`Room ${roomId} deleted`);
+      }
     });
   });
 
   socket.on("offer", ({ roomId, offer }) => {
+    console.log(`Sending offer to room ${roomId}`);
     socket.broadcast.to(roomId).emit("offer", { offer });
   });
 
   socket.on("answer", ({ roomId, answer }) => {
+    console.log(`Sending answer to room ${roomId}`);
     socket.broadcast.to(roomId).emit("answer", { answer });
   });
 
   socket.on("ice-candidate", ({ roomId, candidate }) => {
+    console.log(`Sending ICE candidate to room ${roomId}`);
     socket.broadcast.to(roomId).emit("ice-candidate", { candidate });
   });
 });
@@ -59,6 +66,7 @@ io.on("connection", (socket) => {
 server.listen(8500, () => {
   console.log("Signaling server running on http://localhost:8500");
 });
+
 
 
 // const express = require("express");
