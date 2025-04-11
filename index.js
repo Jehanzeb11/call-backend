@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -8,34 +7,28 @@ const app = express();
 app.use(cors());
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  },
+  }
 });
 
-const rooms = {};
-
 io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
+  console.log("User connected:", socket.id);
 
   socket.on("join-room", ({ roomId }) => {
     socket.join(roomId);
-    if (!rooms[roomId]) rooms[roomId] = [];
-    rooms[roomId].push(socket.id);
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const numClients = room ? room.size : 0;
 
-    const numClients = rooms[roomId].length;
-    console.log(`Room ${roomId}: ${numClients} user(s)`);
-
-    if (numClients === 2) {
-      io.to(roomId).emit("ready");
+    if (numClients === 1) {
+      socket.emit("created");
+    } else {
+      socket.emit("joined");
+      socket.to(roomId).emit("ready");
     }
-
-    socket.on("disconnect", () => {
-      rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
-      if (rooms[roomId].length === 0) delete rooms[roomId];
-    });
   });
 
   socket.on("offer", ({ roomId, offer }) => {
@@ -49,10 +42,14 @@ io.on("connection", (socket) => {
   socket.on("ice-candidate", ({ roomId, candidate }) => {
     socket.to(roomId).emit("ice-candidate", { candidate });
   });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
 });
 
 server.listen(8500, () => {
-  console.log("Server running on http://localhost:8500");
+  console.log("Server is running on http://localhost:8500");
 });
 
 
